@@ -16,7 +16,7 @@ private:
   boost::filesystem::path path;
 
 public:
- Fi(boost::filesystem::path file) : path(file) {}
+  Fi(boost::filesystem::path file) : path(file) {}
   Fi(std::string filePath) : path(filePath) {}
   boost::filesystem::file_status status() {
     try {
@@ -82,19 +82,22 @@ public:
       return false;
     }
   }
-  void forEach(boost::function<void(boost::filesystem::directory_entry&)> func){
-    for (auto& entry : boost::filesystem::directory_iterator(path)) {
-        func(entry);
+  void
+  forEach(boost::function<void(boost::filesystem::directory_entry &)> func) {
+    for (auto &entry : boost::filesystem::directory_iterator(path)) {
+      func(entry);
     }
   }
-  void forEachDeep(boost::function<void(boost::filesystem::directory_entry&)> func,std::string path){
-    for (auto& entry : boost::filesystem::recursive_directory_iterator(path)) {
-        if (boost::filesystem::is_regular_file(entry.path())) {
-                func(entry);
-            }
-        if (boost::filesystem::is_directory(entry.path())) {
-                func(entry);
-            }
+  void
+  forEachDeep(boost::function<void(boost::filesystem::directory_entry &)> func,
+              boost::filesystem::path path) {
+    for (auto &entry : boost::filesystem::recursive_directory_iterator(path)) {
+      if (boost::filesystem::is_regular_file(entry.path())) {
+        func(entry);
+      }
+      if (boost::filesystem::is_directory(entry.path())) {
+        forEachDeep(func, entry.path());
+      }
     }
   }
 };
