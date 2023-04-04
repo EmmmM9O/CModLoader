@@ -1,14 +1,13 @@
 package loader;
 
+import arc.files.Fi;
 import arc.util.Log;
-import mindustry.Vars;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-
+import mindustry.Vars;
 public class CLoader {
     static String root="CMod";
     static String lib="eee";
@@ -36,12 +35,12 @@ public class CLoader {
         System.load(tempFile.getAbsolutePath());
     }
     void LoadMods(){
-        var file= Vars.modDirectory.child(root);
+        Fi file= Vars.modDirectory.child(root);
         if(!file.exists()){
             file.mkdirs();
             Log.info("Init C modDirectory at {0}",file.absolutePath());
         }
-        for(var i:file.list()){
+        for(Fi i:file.list()){
             Load(i.absolutePath());
         }
     }

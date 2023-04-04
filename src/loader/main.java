@@ -5,7 +5,7 @@ import mindustry.mod.Mod;
 public class main extends Mod {
     @Override
     public void init() {
-        var loader=new CLoader();
+        CLoader loader=new CLoader();
         loader.LoadMods();
     }
 }
