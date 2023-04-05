@@ -161,3 +161,7 @@ CLoader/build/
 CLoader/bin/
 CLoader/lib/
 CLoader/.cache/
+CLoader/CMakeFiles
+CLoader/*.cmake
+CLoader/CMakeCache.txt
+CLoader/Makefile
