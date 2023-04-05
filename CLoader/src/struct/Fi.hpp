@@ -143,44 +143,47 @@ public:
       throw InvalidZip(filePath);
     }
   }
-  void extract_file(zip_t *archive, zip_file_t *file,
-                    const std::string &output_dir) {
-    
-  }
   Fi unzip(std::string &out_file) {
-    try {
-      if (!boost::filesystem::create_directory(out_file)) {
-        throw InvalidFile(out_file);
-      }
-      zip_t *archive = zip_open(path.string().data(), ZIP_CHECKCONS, nullptr);
-      if (!archive) {
-        throw InvalidZip(path.string());
-      }
-      int num_entries = zip_get_num_entries(archive, 0);
-      for (int i = 0; i < num_entries; i++) {
-        zip_stat_t stat;
-        if (zip_stat_index(archive, i, 0, &stat) != 0) {
-          throw DecompressionError(std::to_string(i));
-        }
-        if (stat.name[strlen(stat.name) - 1] == '/') {
-          std::string dir_name = out_file + '/' + std::string(stat.name);
-          if (boost::filesystem::create_directory(dir_name)) {
-            throw InvalidFile(dir_name);
-          }
-        } else {
-          zip_file_t *file = zip_fopen_index(archive, i, 0);
-          if (!file) {
-            throw DecompressionError(std::to_string(i));
-          }
-          extract_file(archive, file, out_file);
-          zip_fclose(file);
-        }
-      }
-      zip_close(archive);
-      return Fi(out_file);
-    } catch (boost::filesystem::filesystem_error &e) {
-      throw e;
+    int error;
+    zip *archive = zip_open(path.string().c_str(), 0, &error);
+    if (archive == nullptr) {
+      throw InvalidZip(path.string());
     }
+    int num_entries = zip_get_num_entries(archive, 0);
+    for (int i = 0; i < num_entries; i++) {
+      const char *name = zip_get_name(archive, i, 0);
+      if (name == nullptr) {
+        throw DecompressionError(zip_strerror(archive));
+      }
+      std::string dir = out_file + "/" + std::string(name);
+      size_t pos = dir.rfind("/");
+      if (pos != std::string::npos) {
+        dir = dir.substr(0, pos);
+      }
+      if (!boost::filesystem::create_directory(dir) &&
+          !boost::filesystem::exists(dir)) {
+        throw InvalidFile(strerror(errno));
+      }
+      zip_file *file = zip_fopen_index(archive, i, 0);
+      if (file == nullptr) {
+        throw InvalidFile(zip_strerror(archive));
+      }
+      std::string output_path = out_file + "/" + std::string(name);
+      FILE *output_file = fopen(output_path.c_str(), "wb");
+      if (output_file == nullptr) {
+        zip_fclose(file);
+        throw InvalidFile(strerror(errno));
+      }
+      char buffer[BUFSIZ];
+      int read_bytes;
+      while ((read_bytes = zip_fread(file, buffer, BUFSIZ)) > 0) {
+        fwrite(buffer, sizeof(char), read_bytes, output_file);
+      }
+      fclose(output_file);
+      zip_fclose(file);
+    }
+    zip_close(archive);
+    return Fi(out_file);
   }
 };
 } // namespace Struct
