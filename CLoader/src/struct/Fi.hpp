@@ -1,25 +1,26 @@
 #pragma once
 #include <boost/filesystem.hpp>
-#include <boost/filesystem/directory.hpp>
-#include <boost/filesystem/operations.hpp>
 #include <boost/function.hpp>
-#include <boost/iostreams/device/file.hpp>
-#include <boost/iostreams/filter/bzip2.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/filter/zlib.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-#include <exception>
 #include <string>
+#include <exception>
 extern "C" {
 #include <zip.h>
 }
 namespace Struct {
-
+/**
+ * @brief Fi
+ *
+ */
 class Fi {
 protected:
   boost::filesystem::path path;
 
 public:
+  /**
+   * @brief Construct a new Fi object
+   *
+   * @param file
+   */
   Fi(boost::filesystem::path file) : path(file) {}
   Fi(std::string filePath) : path(filePath) {}
   boost::filesystem::file_status status() {
@@ -29,6 +30,12 @@ public:
       throw e;
     }
   }
+  /**
+   * @brief if it exists
+   *
+   * @return true
+   * @return false
+   */
   bool exists() {
     try {
       return boost::filesystem::exists(status());
@@ -36,6 +43,12 @@ public:
       return false;
     }
   }
+  /**
+   * @brief mkdir directory if error return false
+   *
+   * @return true
+   * @return false
+   */
   bool mkdir() {
     try {
       return boost::filesystem::create_directory(path);
@@ -43,6 +56,13 @@ public:
       return false;
     }
   }
+  /**
+   * @brief change the name of the file
+   * @note if something went wrong return false
+   * @param name
+   * @return true
+   * @return false
+   */
   bool rename(std::string name) {
     try {
       if (!exists())
@@ -53,6 +73,12 @@ public:
       return false;
     }
   }
+  /**
+   * @brief if it is a regular file
+   *
+   * @return true
+   * @return false
+   */
   bool is_file() {
     try {
       if (!exists())
@@ -62,6 +88,12 @@ public:
       return false;
     }
   }
+  /**
+   * @brief remove the file or dir
+   * @note if something went wrong return false
+   * @return true
+   * @return false
+   */
   bool remove() {
     try {
       if (!exists())
@@ -71,6 +103,11 @@ public:
       return false;
     }
   }
+  /**
+   * @brief return the size of the fi
+   *
+   * @return auto
+   */
   auto size() { return boost::filesystem::file_size(path); }
   std::string readALL() {
     auto file_size = size();
@@ -80,6 +117,12 @@ public:
         .read(&file_content[0], file_size);
     return file_content;
   }
+  /**
+   * @brief if it is a dir
+   * @note if it !exists return false too
+   * @return true
+   * @return false
+   */
   bool is_directory() {
     try {
       if (!exists())
@@ -89,12 +132,23 @@ public:
       return false;
     }
   }
+  /**
+   * @brief traverse folder
+   *
+   * @param func the func (dir_entry)=>void
+   */
   void
   forEach(boost::function<void(boost::filesystem::directory_entry &)> func) {
     for (auto &entry : boost::filesystem::directory_iterator(path)) {
       func(entry);
     }
   }
+  /**
+   * @brief Recursive traversal of specified files
+   *
+   * @param func
+   * @param path
+   */
   void
   forEachDeep(boost::function<void(boost::filesystem::directory_entry &)> func,
               boost::filesystem::path path) {
@@ -107,7 +161,20 @@ public:
       }
     }
   }
+  /**
+   * @brief Recursively traverse this folder
+   *
+   * @param func
+   */
+  void forEachDeep(
+      boost::function<void(boost::filesystem::directory_entry &)> func) {
+    forEachDeep(func, path);
+  }
 };
+/**
+ * @brief compression error
+ *
+ */
 class DecompressionError : public std::exception {
 private:
   std::string path, info;
@@ -118,6 +185,10 @@ public:
   }
   const char *what() const throw() override final { return info.data(); }
 };
+/**
+ * @brief Invalid ZIP
+ *
+ */
 class InvalidZip : public std::exception {
 private:
   std::string path, info;
@@ -144,18 +215,19 @@ public:
     }
   }
   Fi unzip(std::string &out_file) {
-	  if(!boost::filesystem::exists(out_file)) boost::filesystem::create_directory(out_file);
+    if (!boost::filesystem::exists(out_file))
+      boost::filesystem::create_directory(out_file);
     int error;
     zip *archive = zip_open(path.string().c_str(), 0, &error);
     if (archive == nullptr) {
-	    
+
       throw InvalidZip(path.string());
     }
     int num_entries = zip_get_num_entries(archive, 0);
     for (int i = 0; i < num_entries; i++) {
       const char *name = zip_get_name(archive, i, 0);
       if (name == nullptr) {
-	      continue;
+        continue;
         throw DecompressionError(zip_strerror(archive));
       }
       std::string dir = out_file + "/" + std::string(name);
@@ -165,19 +237,19 @@ public:
       }
       if (!boost::filesystem::create_directory(dir) &&
           !boost::filesystem::exists(dir)) {
-	      continue;
+        continue;
         throw InvalidFile(strerror(errno));
       }
       zip_file *file = zip_fopen_index(archive, i, 0);
       if (file == nullptr) {
-continue;
+        continue;
         throw InvalidFile(zip_strerror(archive));
       }
       std::string output_path = out_file + "/" + std::string(name);
       FILE *output_file = fopen(output_path.c_str(), "wb");
-      if (output_file == nullptr) {	
+      if (output_file == nullptr) {
         zip_fclose(file);
-	continue;
+        continue;
         throw InvalidFile(strerror(errno));
       }
       char buffer[BUFSIZ];
