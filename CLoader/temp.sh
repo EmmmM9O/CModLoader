@@ -1,2 +1,5 @@
 #bin/sh
-dpkg -l | grep libboost
+cp CLoaderTest Test
+cd Test
+rm -r test
+./CLoaderTest test.zip test

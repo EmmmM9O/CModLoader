@@ -144,15 +144,18 @@ public:
     }
   }
   Fi unzip(std::string &out_file) {
+	  if(!boost::filesystem::exists(out_file)) boost::filesystem::create_directory(out_file);
     int error;
     zip *archive = zip_open(path.string().c_str(), 0, &error);
     if (archive == nullptr) {
+	    
       throw InvalidZip(path.string());
     }
     int num_entries = zip_get_num_entries(archive, 0);
     for (int i = 0; i < num_entries; i++) {
       const char *name = zip_get_name(archive, i, 0);
       if (name == nullptr) {
+	      continue;
         throw DecompressionError(zip_strerror(archive));
       }
       std::string dir = out_file + "/" + std::string(name);
@@ -162,16 +165,19 @@ public:
       }
       if (!boost::filesystem::create_directory(dir) &&
           !boost::filesystem::exists(dir)) {
+	      continue;
         throw InvalidFile(strerror(errno));
       }
       zip_file *file = zip_fopen_index(archive, i, 0);
       if (file == nullptr) {
+continue;
         throw InvalidFile(zip_strerror(archive));
       }
       std::string output_path = out_file + "/" + std::string(name);
       FILE *output_file = fopen(output_path.c_str(), "wb");
-      if (output_file == nullptr) {
+      if (output_file == nullptr) {	
         zip_fclose(file);
+	continue;
         throw InvalidFile(strerror(errno));
       }
       char buffer[BUFSIZ];

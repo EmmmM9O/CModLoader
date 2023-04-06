@@ -165,3 +165,11 @@ CLoader/CMakeFiles
 CLoader/*.cmake
 CLoader/CMakeCache.txt
 CLoader/Makefile
+
+CLoader/CTestTestfile.cmake
+CLoader/DartConfiguration.tcl
+CLoader/Testing
+CLoader/cmake
+CLoader/CPackSourceConfig.cmake
+CLoader/CPackConfig.cmake
+CLoader/Test
