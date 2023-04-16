@@ -47,7 +47,9 @@ public:
 
   std::string extension() { return path.extension().string(); }
   void change_extension(std::string ext) {
-    rename(path.replace_extension(ext).string());
+    auto t_p = path.parent_path() / (path.stem().string() + ext);
+    boost::filesystem::rename(path, t_p);
+    path = t_p;
   }
   std::string name() { return path.filename().string(); }
   /**
