@@ -1,4 +1,8 @@
 {
     "cmake.configureOnOpen": true,
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "cSpell.words": [
+        "cmod",
+        "ptree"
+    ]
 }

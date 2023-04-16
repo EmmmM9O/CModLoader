@@ -5,6 +5,7 @@
 #include <map>
 #include <queue>
 #include <string>
+#include <typeinfo>
 namespace Struct {
 class RunningTimeError : public std::exception {
 public:
@@ -12,33 +13,12 @@ public:
   RunningTimeError(std::string e) { err = e; }
   const char *what() const throw() override { return err.data(); }
 };
-template <typename Key> class forwardKey {
+class BasicsType {
 public:
-  Key key;
-  bool must;
-  forwardKey(Key k, bool m) {
-    key = k;
-    must = m;
+  virtual const std::type_info &type() {
+    const std::type_info &type = typeid(BasicsType);
+    return type;
   }
-};
-template <typename Key, typename Data> class forwardList {
-public:
-  std::map<Key, Data> run() {
-    std::map<Key, Data> list;
-    while (!Belt.empty()) {
-      auto key = Belt.front();
-      auto data = getData(key.key);
-      if (checker(data) || !key.must) {
-        list[key.key] = data;
-      } else {
-        Error(key.key);
-      }
-      Belt.pop();
-    }
-  }
-  std::queue<forwardKey<Key>> Belt;
-  boost::function<Data(Key)> getData;
-  boost::function<void(Key)> Error;
-  boost::function<bool(Data)> checker;
+  virtual std::string toString() { return "[BasicsType][BasicsType]"; }
 };
 } // namespace Struct

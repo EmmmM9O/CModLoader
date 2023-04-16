@@ -3,7 +3,9 @@
 #include "../struct/Fi.hpp"
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
+#include <cstdlib>
 #include <exception>
+#include <iostream>
 #include <string>
 namespace Core {
 class ErrorModFile : public std::exception {
@@ -12,19 +14,22 @@ public:
   ErrorModFile(std::string p) { info = "mod " + p + " Is invalid"; }
   const char *what() const throw() override { return info.c_str(); }
 };
-class modFile {
+class modFile : public Struct::BasicsType {
 public:
   const std::string standard = "cmod";
   std::string name, version, decs, author;
+  std::vector<std::string> scripts;
   Struct::ZipFi file;
-  std::list<Struct::forwardKey<std::string>> Belt = {
-      Struct::forwardKey<std::string>("mod.json", true)};
+  // std::list<std::string> list;
+  modFile(std::string p) : file(p) { loadFile(Struct::Fi(p)); }
   void loadFile(Struct::Fi f) {
+    std::cout << "Test1" << std::endl;
     try {
       file = Struct::ZipFi(f);
     } catch (Struct::InvalidZip &e) {
       throw e;
     }
+    std::cout << "Test1" << std::endl;
     if (!f.extension().ends_with(standard)) {
       throw Struct::RunningTimeError("mod " + f.string() +
                                      " doesn't ends with " + standard +
@@ -33,36 +38,55 @@ public:
     auto tempFile = file.parent().child("tmp");
     if (!tempFile.exists())
       tempFile.mkdir();
+    std::cout << "Test2" << std::endl;
     if (!file.copy_to(tempFile)) {
       throw Struct::RunningTimeError("Can't copy file " + file.string() +
                                      " to " + tempFile.string());
     }
-    auto modF = tempFile.child(f.name());
+    auto tempModFile = Struct::ZipFi(tempFile.child(file.name()));
+    tempModFile.change_extension("zip");
+    std::cout << "Test4" << std::endl;
+    auto modF = tempFile.child(f.path.stem().string());
     try {
-      file.unzip(modF.string());
+      std::cout << "path:" + tempModFile.string() << " to " << modF.string()
+                << std::endl;
+      exit(0);
+      tempModFile.unzip(modF.string());
     } catch (...) {
       if (modF.exists())
         modF.remove();
+      tempModFile.remove();
       throw ErrorModFile(f.string());
     }
-    Struct::forwardList<std::string, Struct::Fi> list;
-    list.getData = [&modF](std::string key) -> Struct::Fi {
-      return modF.child(key);
-    };
-    list.checker = [](Struct::Fi file) -> bool { return file.exists(); };
-    list.Error = [&f, &modF](std::string file) -> void {
+    auto Target_file = modF.child("mod.json");
+    if (!Target_file.exists()) {
       modF.remove();
-      throw Struct::RunningTimeError("cannot find " + file + " in " +
-                                     f.string());
-    };
-    for (auto i : Belt) {
-      list.Belt.push(i);
+      tempModFile.remove();
+      throw Struct::RunningTimeError("mod without mod.json");
     }
-    auto m = list.run();
-    auto Target_file = m["mod.json"];
     // read mod json
     readInfo(Target_file.read_json());
+    modF.remove();
+    tempModFile.remove();
   }
-  void readInfo(boost::property_tree::ptree tree) {}
+  void readInfo(boost::property_tree::ptree tree) {
+    name = tree.get<std::string>("name");
+    author = tree.get<std::string>("author");
+    version = tree.get<std::string>("version");
+    decs = tree.get<std::string>("decs");
+    auto s_tree = tree.get_child("scripts");
+    for (auto &script : s_tree) {
+      scripts.push_back(script.second.data());
+    }
+  }
+  std::string toString() override final {
+    std::string str = (std::string) "-----mod-----\n" + "name:" + name +
+                      "  author:" + author + "\nversion:" + version +
+                      "\ndecs:" + decs + "\nScripts:";
+    for (auto s : scripts) {
+      str += s + "\n";
+    }
+    return str;
+  }
 };
 } // namespace Core

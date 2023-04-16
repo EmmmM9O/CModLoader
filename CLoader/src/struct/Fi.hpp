@@ -21,8 +21,12 @@ public:
     try {
       if (is_file()) {
         if (file.is_file() || !file.exists()) {
+          if (file.exists())
+            file.remove();
           boost::filesystem::copy_file(path, file.path);
         } else {
+          if (file.child(name()).exists())
+            file.child(name()).remove();
           boost::filesystem::copy_file(path, file.path / name());
         }
       }
@@ -42,7 +46,9 @@ public:
   }
 
   std::string extension() { return path.extension().string(); }
-  void change_extension(std::string ext) { path.replace_extension(ext); }
+  void change_extension(std::string ext) {
+    rename(path.replace_extension(ext).string());
+  }
   std::string name() { return path.filename().string(); }
   /**
    * @brief Construct a new Fi object

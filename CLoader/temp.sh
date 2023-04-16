@@ -1,5 +1,5 @@
 #bin/sh
+make
 cp CLoaderTest Test
 cd Test
-rm -r test
-./CLoaderTest test.zip test
+./CLoaderTest CMod.cmod

@@ -173,3 +173,5 @@ CLoader/cmake
 CLoader/CPackSourceConfig.cmake
 CLoader/CPackConfig.cmake
 CLoader/Test
+CLoader/CLoaderTest
+CLoader/CLoaderTest
