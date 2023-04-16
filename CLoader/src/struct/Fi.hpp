@@ -1,8 +1,11 @@
 #pragma once
 #include <boost/filesystem.hpp>
+#include <boost/filesystem/directory.hpp>
 #include <boost/function.hpp>
-#include <string>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 #include <exception>
+#include <string>
 extern "C" {
 #include <zip.h>
 }
@@ -12,10 +15,35 @@ namespace Struct {
  *
  */
 class Fi {
-protected:
-  boost::filesystem::path path;
-
 public:
+  boost::filesystem::path path;
+  bool copy_to(Fi file) {
+    try {
+      if (is_file()) {
+        if (file.is_file() || !file.exists()) {
+          boost::filesystem::copy_file(path, file.path);
+        } else {
+          boost::filesystem::copy_file(path, file.path / name());
+        }
+      }
+      if (is_directory()) {
+        if (file.is_directory()) {
+          boost::filesystem::copy_file(path, file.path / name());
+        }
+        if (!file.exists())
+          boost::filesystem::copy_file(path, file.path);
+        else
+          return false;
+      }
+      return true;
+    } catch (...) {
+      return false;
+    }
+  }
+
+  std::string extension() { return path.extension().string(); }
+  void change_extension(std::string ext) { path.replace_extension(ext); }
+  std::string name() { return path.filename().string(); }
   /**
    * @brief Construct a new Fi object
    *
@@ -30,6 +58,14 @@ public:
       throw e;
     }
   }
+  boost::property_tree::ptree read_json() {
+    boost::property_tree::ptree root;
+    boost::property_tree::json_parser::read_json(path.string(), root);
+    return root;
+  }
+  Fi child(std::string na) { return Fi(path / na); }
+  Fi parent() { return Fi(path.parent_path()); }
+  std::string string() { return path.string(); }
   /**
    * @brief if it exists
    *
@@ -209,12 +245,17 @@ public:
 };
 class ZipFi : public Fi {
 public:
+  ZipFi(Fi f) : Fi(f) {
+    if (!is_file()) {
+      throw InvalidZip(f.path.string());
+    }
+  }
   ZipFi(std::string filePath) : Fi(filePath) {
     if (!is_file()) {
       throw InvalidZip(filePath);
     }
   }
-  Fi unzip(std::string &out_file) {
+  Fi unzip(std::string out_file) {
     if (!boost::filesystem::exists(out_file))
       boost::filesystem::create_directory(out_file);
     int error;
