@@ -14,7 +14,9 @@ namespace __Scripts__ {
 class CXX : public Core::script {
 public:
   CXX() { name = "c++"; }
+  void load(Struct::Fi file, boost::property_tree::ptree tree) override {}
 };
 } // namespace __Scripts__
 
-extern std::map<std::string, Core::script *> Scripts;
+const std::map<std::string, Core::script *> Scripts = {
+    {"c++", new (__Scripts__::CXX)}};

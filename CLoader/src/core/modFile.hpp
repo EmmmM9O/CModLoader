@@ -84,7 +84,7 @@ public:
       auto str = script.second.data();
       if (Scripts.count(str) > 0) {
         scripts.push_back(str);
-        Scripts[str]->load(file.child("build"), tree);
+        Scripts.at(str)->load(file.child("build"), tree);
       } else {
         throw Struct::RunningTimeError("No such script " + str);
       }
